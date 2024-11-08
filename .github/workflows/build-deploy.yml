@@ -16,10 +16,10 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'  # 필요한 Flutter 버전
+          flutter-version: '3.24.0'  # Flutter 버전
 
       - name: Clean Pub Cache
-        run: flutter pub cache repair  # 모든 패키지 캐시를 정리
+        run: flutter pub cache clean  # 모든 패키지 캐시 삭제
 
       - name: Install Dependencies
         run: flutter pub get
