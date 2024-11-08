@@ -16,7 +16,10 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0' # Dart SDK 3.2.0 이상을 포함한 최신 Flutter 버전
+          flutter-version: '3.24.0'  # 필요한 Flutter 버전
+
+      - name: Clean Pub Cache
+        run: flutter pub cache repair  # 모든 패키지 캐시를 정리
 
       - name: Install Dependencies
         run: flutter pub get
@@ -30,6 +33,6 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.IEEMHYE_SECRET_KEY }} # repository에서 사용할 시크릿 키 이름
-          publish_dir: build/web  # 배포할 디렉토리
+          github_token: ${{ secrets.IEEMHYE_SECRET_KEY }}
+          publish_dir: build/web
           publish_branch: gh-pages
