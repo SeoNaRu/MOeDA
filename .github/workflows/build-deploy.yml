@@ -3,7 +3,8 @@ name: Deploy Flutter Web App to GitHub Pages
 on:
   push:
     branches:
-      - gh-pages
+      - main
+
 
 jobs:
   build-and-deploy:
