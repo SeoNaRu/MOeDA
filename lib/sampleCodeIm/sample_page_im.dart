@@ -9,6 +9,7 @@ class SamplePageIm extends StatefulWidget {
 }
 
 class _SamplePageImState extends State<SamplePageIm> {
+
   CameraController? _controller;
   bool _isCameraInitialized = false;
   List<CameraDescription>? cameras;
@@ -20,6 +21,8 @@ class _SamplePageImState extends State<SamplePageIm> {
   }
 
   Future<void> _initializeCamera() async {
+    print('이거 실행되는거 맞아?2');
+
     cameras = await availableCameras();
     final frontCamera = cameras?.firstWhere(
       (camera) => camera.lensDirection == CameraLensDirection.front,
