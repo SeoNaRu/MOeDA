@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
@@ -9,9 +8,8 @@ class SamplePageIm extends StatefulWidget {
 }
 
 class _SamplePageImState extends State<SamplePageIm> {
-
   CameraController? _controller;
-  bool _isCameraInitialized = false;
+  Future<void>? _initializeControllerFuture;
   List<CameraDescription>? cameras;
 
   @override
@@ -21,21 +19,17 @@ class _SamplePageImState extends State<SamplePageIm> {
   }
 
   Future<void> _initializeCamera() async {
-    print('이거 실행되는거 맞아?2');
-
     cameras = await availableCameras();
     final frontCamera = cameras?.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.front,
+          (camera) => camera.lensDirection == CameraLensDirection.front,
+      orElse: () => cameras!.first,
     );
 
     if (frontCamera != null) {
       _controller = CameraController(frontCamera, ResolutionPreset.high);
-      await _controller?.initialize();
-      setState(() {
-        _isCameraInitialized = true;
-      });
+      _initializeControllerFuture = _controller?.initialize();
+      setState(() {}); // FutureBuilder를 새로고침하여 초기화 상태를 반영
     }
-    //test
   }
 
   @override
@@ -47,26 +41,52 @@ class _SamplePageImState extends State<SamplePageIm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isCameraInitialized
-          ? Stack(
+      body: FutureBuilder<void>(
+        future: _initializeControllerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            // 카메라 초기화 완료 시, 카메라 프리뷰 표시
+            return Stack(
               children: [
-                // 전체 화면을 차지하는 카메라 프리뷰
+                // 카메라 프리뷰 배경
                 Positioned.fill(
                   child: CameraPreview(_controller!),
                 ),
-                // 블러 효과 추가
-                // Positioned.fill(
-                //   child: BackdropFilter(
-                //     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                //     child: Container(
-                //       color: Colors.black.withOpacity(0.3),
-                //     ),
-                //   ),
-                // ),
-                // 날짜와 시간
+                // 중앙 아이콘과 텍스트
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 280,
+                        height: 438,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: Center(
+                          child: Image.asset(
+                            "assets/test_icon/center_icon.png",
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        "영역 안에 칫솔을 인식해 주세요",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // 상단 왼쪽 날짜 및 시간
                 Positioned(
-                  top: 28,
-                  left: 28,
+                  top: 62,
+                  left: 62,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -74,14 +94,14 @@ class _SamplePageImState extends State<SamplePageIm> {
                         "SUNDAY, April 3rd",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 9,
+                          fontSize: 21,
                           fontWeight: FontWeight.w300,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Container(
-                        width: 77,
-                        height: 1,
+                        width: 169,
+                        height: 2,
                         color: Colors.white,
                       ),
                       const SizedBox(height: 3),
@@ -92,7 +112,7 @@ class _SamplePageImState extends State<SamplePageIm> {
                             "06:30 ",
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 43,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -102,13 +122,11 @@ class _SamplePageImState extends State<SamplePageIm> {
                                 "PM",
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 14,
+                                  fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              SizedBox(
-                                height: 1,
-                              )
+                              SizedBox(height: 5),
                             ],
                           ),
                         ],
@@ -116,57 +134,49 @@ class _SamplePageImState extends State<SamplePageIm> {
                     ],
                   ),
                 ),
-                // 오른쪽 아이콘 메뉴 컨테이너
+                // 오른쪽 아이콘 메뉴
                 Positioned(
-                  top: 25,
-                  right: 18,
+                  top: 56,
+                  right: 40,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 5),
+                    padding: EdgeInsets.symmetric(horizontal: 10),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.4)),
                     ),
                     child: Column(
                       children: [
-                        SizedBox(
-                          height: 6,
-                        ),
+                        SizedBox(height: 12),
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(7),
+                            borderRadius: BorderRadius.circular(15),
                           ),
-                          padding: const EdgeInsets.all(6),
-                          child: _buildIcon("assets/test_icon/main_icon_1.png",
-                              isTopIcon: true),
+                          padding: const EdgeInsets.all(13),
+                          child: _buildIcon("assets/test_icon/main_icon_1.png", isTopIcon: true),
                         ),
-                        SizedBox(
-                          height: 14,
-                        ),
+                        SizedBox(height: 30),
                         _buildIcon("assets/test_icon/main_icon_2.png"),
-                        SizedBox(
-                          height: 17,
-                        ),
+                        SizedBox(height: 37),
                         _buildIcon("assets/test_icon/main_icon_3.png"),
-                        SizedBox(
-                          height: 17,
-                        ),
+                        SizedBox(height: 37),
                         _buildIcon("assets/test_icon/main_icon_4.png"),
-                        SizedBox(
-                          height: 17,
-                        ),
+                        SizedBox(height: 37),
                         _buildIcon("assets/test_icon/main_icon_5.png"),
-                        SizedBox(
-                          height: 14,
-                        ),
+                        SizedBox(height: 26),
                       ],
                     ),
                   ),
                 ),
               ],
-            )
-          : Center(child: CircularProgressIndicator()),
+            );
+          } else {
+            // 로딩 중일 때 로딩 표시
+            return Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
     );
   }
 
