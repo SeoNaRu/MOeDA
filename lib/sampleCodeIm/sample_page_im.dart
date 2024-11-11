@@ -707,7 +707,7 @@ class _SamplePageImState extends State<SamplePageIm> {
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          '린이다',
+                          '김이다',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.8),
                             fontSize: 16,
@@ -895,7 +895,7 @@ class _SamplePageImState extends State<SamplePageIm> {
                       92,
                     ),
                     _buildMVP(
-                      '린이다',
+                      '김이다',
                       '2',
                       '5',
                       85,
