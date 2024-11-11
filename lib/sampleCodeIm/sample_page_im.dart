@@ -43,7 +43,6 @@ class _SamplePageImState extends State<SamplePageIm> {
   // 화면 터치 시 step을 업데이트하는 함수
   void _nextStep() {
     setState(() {
-      print('터치 감지');
       _currentStep = _currentStep % 6 + 1; // 1~6까지 반복
     });
   }
@@ -58,7 +57,6 @@ class _SamplePageImState extends State<SamplePageIm> {
             // 카메라 초기화 완료 시, 카메라 프리뷰 표시
             return GestureDetector(
               onTap: (){
-                print('터치 감지');
                 _nextStep();
               },
               child: Stack(
@@ -171,7 +169,7 @@ class _SamplePageImState extends State<SamplePageIm> {
   Widget _buildStep1() {
     return Positioned(
       top: 56,
-      right: 40,
+      right: 62,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
