@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class SamplePageIm extends StatefulWidget {
   @override
@@ -11,6 +12,9 @@ class _SamplePageImState extends State<SamplePageIm> {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
   List<CameraDescription>? cameras;
+  String formattedDate = '';
+  String formattedTime = '';
+  String period = '';
 
   int _currentStep = 1; // 현재 표시할 step을 추적하는 변수
 
@@ -18,12 +22,13 @@ class _SamplePageImState extends State<SamplePageIm> {
   void initState() {
     super.initState();
     _initializeCamera();
+    _updateTime();
   }
 
   Future<void> _initializeCamera() async {
     cameras = await availableCameras();
     final frontCamera = cameras?.firstWhere(
-          (camera) => camera.lensDirection == CameraLensDirection.front,
+      (camera) => camera.lensDirection == CameraLensDirection.front,
       orElse: () => cameras!.first,
     );
 
@@ -31,6 +36,42 @@ class _SamplePageImState extends State<SamplePageIm> {
       _controller = CameraController(frontCamera, ResolutionPreset.high);
       _initializeControllerFuture = _controller?.initialize();
       setState(() {}); // FutureBuilder를 새로고침하여 초기화 상태를 반영
+    }
+  }
+
+  void _updateTime() {
+    Timer.periodic(Duration(seconds: 1), (_) {
+      final now = DateTime.now();
+
+      // 요일은 대문자로, 날짜는 "MMMM d" 형식으로 가져오기
+      final dayOfWeek = DateFormat('EEEE').format(now).toUpperCase();
+      final monthDay = DateFormat('MMMM d').format(now);
+
+      // 접미사 추가
+      final daySuffix = _addDaySuffix(now.day);
+
+      // 상태 업데이트 (setState)로 UI 갱신
+      setState(() {
+        formattedDate =
+            '$dayOfWeek, $monthDay$daySuffix'; // 예: SUNDAY, April 3rd
+        formattedTime = DateFormat('hh:mm').format(now);
+        period = DateFormat('a').format(now);
+      });
+    });
+  }
+
+// 접미사 처리 함수
+  String _addDaySuffix(int day) {
+    if (day >= 11 && day <= 13) return 'th';
+    switch (day % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
     }
   }
 
@@ -56,7 +97,7 @@ class _SamplePageImState extends State<SamplePageIm> {
           if (snapshot.connectionState == ConnectionState.done) {
             // 카메라 초기화 완료 시, 카메라 프리뷰 표시
             return GestureDetector(
-              onTap: (){
+              onTap: () {
                 _nextStep();
               },
               child: Stack(
@@ -69,10 +110,8 @@ class _SamplePageImState extends State<SamplePageIm> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: (){
-                          print('카메라 터치 ');
+                        onTap: () {
                           _nextStep();
-
                         },
                         child: Container(
                           color: Colors.transparent, // 터치 영역을 전체 화면으로 확장
@@ -90,25 +129,34 @@ class _SamplePageImState extends State<SamplePageIm> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "SUNDAY, April 3rd",
+                          formattedDate,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 21,
-                            fontWeight: FontWeight.w300,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Container(
-                          width: 169,
-                          height: 2,
-                          color: Colors.white,
+                        IntrinsicWidth(
+                          child: Container(
+                            height: 2,
+                            color: Colors.white,
+                            child: Text(
+                              formattedDate,
+                              style: TextStyle(
+                                color: Colors.transparent, // 텍스트를 안 보이게 설정
+                                fontSize: 21,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 3),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              "06:30 ",
+                              formattedTime,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 43,
@@ -118,7 +166,7 @@ class _SamplePageImState extends State<SamplePageIm> {
                             Column(
                               children: [
                                 Text(
-                                  "PM",
+                                  period,
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 22,
@@ -144,7 +192,6 @@ class _SamplePageImState extends State<SamplePageIm> {
       ),
     );
   }
-
 
   // 현재 step에 따라 표시할 위젯을 반환하는 함수
   Widget _getCurrentStepWidget() {
@@ -236,18 +283,61 @@ class _SamplePageImState extends State<SamplePageIm> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 280,
-            height: 438,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.white, width: 2),
-            ),
-            child: Center(
-              child: Image.asset(
-                "assets/test_icon/center_icon.png",
-              ),
+          SizedBox(
+            width: 284,
+            height: 444,
+            child: Stack(
+              children: [
+                Center(
+                  child: Container(
+                    width: 280,
+                    height: 438,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Image.asset(
+                        "assets/test_icon/center_icon.png",
+
+                      ),
+                    ),
+
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: Image.asset(
+                    'assets/test_icon/top_left_corner.png',
+
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Image.asset(
+                    'assets/test_icon/top_right_corner.png',
+
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  child: Image.asset(
+                    'assets/test_icon/bottom_left_corner.png',
+
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Image.asset(
+                    'assets/test_icon/bottom_right_corner.png',
+
+                  ),
+                ),
+              ],
             ),
           ),
           SizedBox(height: 10),
@@ -256,13 +346,16 @@ class _SamplePageImState extends State<SamplePageIm> {
             style: TextStyle(
               color: Colors.white,
               fontSize: 15,
-              fontWeight: FontWeight.normal,
             ),
           ),
         ],
       ),
     );
+
+
   }
+
+
 
   Widget _buildStep3() {
     return Positioned(
@@ -624,12 +717,12 @@ class _SamplePageImState extends State<SamplePageIm> {
                   '오늘의 MVP',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: 14,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 15),
+            SizedBox(height: 12),
             // MVP 사용자 1위
             Container(
               padding: EdgeInsets.symmetric(horizontal: 37, vertical: 8),
@@ -699,7 +792,7 @@ class _SamplePageImState extends State<SamplePageIm> {
                         // 텍스트 중앙 정렬
                         child: Text(
                           '2',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: Colors.black54),
                         ),
                       ),
                       SizedBox(width: 10),
@@ -741,7 +834,7 @@ class _SamplePageImState extends State<SamplePageIm> {
                         // 텍스트 중앙 정렬
                         child: Text(
                           '3',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: Colors.black54),
                         ),
                       ),
                       SizedBox(width: 10),
@@ -906,7 +999,7 @@ class _SamplePageImState extends State<SamplePageIm> {
                     ),
                     // Start Button
                     SizedBox(
-                      height: 16,
+                      height: 14,
                     ),
                     Container(
                       width: double.infinity,

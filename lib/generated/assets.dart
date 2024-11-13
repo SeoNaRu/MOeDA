@@ -10,6 +10,8 @@ class Assets {
   static const String iconsPlus = 'assets/icons/plus.svg';
   static const String iconsSmile = 'assets/icons/Smile.svg';
   static const String imagesAd1 = 'assets/images/ad1.png';
+  static const String testIconBottomLeftCorner = 'assets/test_icon/bottom_left_corner.png';
+  static const String testIconBottomRightCorner = 'assets/test_icon/bottom_right_corner.png';
   static const String testIconCenterIcon = 'assets/test_icon/center_icon.png';
   static const String testIconCloseIcon = 'assets/test_icon/close_icon.png';
   static const String testIconMainIcon1 = 'assets/test_icon/main_icon_1.png';
@@ -34,6 +36,8 @@ class Assets {
   static const String testIconToothBtm = 'assets/test_icon/tooth_btm.png';
   static const String testIconToothTime = 'assets/test_icon/tooth_time.png';
   static const String testIconToothTop = 'assets/test_icon/tooth_top.png';
+  static const String testIconTopLeftCorner = 'assets/test_icon/top_left_corner.png';
+  static const String testIconTopRightCorner = 'assets/test_icon/top_right_corner.png';
   static const String testIconUserImage = 'assets/test_icon/user_image.png';
 
 }
