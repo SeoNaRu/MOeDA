@@ -132,6 +132,7 @@ class _SamplePageImState extends State<SamplePageIm>
 
   @override
   Widget build(BuildContext context) {
+    // git 확인용
     return Scaffold(
       body: FutureBuilder<void>(
         future: _initializeControllerFuture,
