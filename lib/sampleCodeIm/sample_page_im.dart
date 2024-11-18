@@ -2,13 +2,16 @@ import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
 
 class SamplePageIm extends StatefulWidget {
   @override
   _SamplePageImState createState() => _SamplePageImState();
 }
 
-class _SamplePageImState extends State<SamplePageIm> {
+class _SamplePageImState extends State<SamplePageIm>
+    with TickerProviderStateMixin { // SingleTickerProviderStateMixin -> TickerProviderStateMixin
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
   List<CameraDescription>? cameras;
@@ -17,25 +20,75 @@ class _SamplePageImState extends State<SamplePageIm> {
   String period = '';
 
   int _currentStep = 1; // 현재 표시할 step을 추적하는 변수
+  Timer? _stepTimer; // step 자동 변경을 위한 Timer
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+  late AnimationController _iconAnimationController;
+  late Animation<double> _iconAnimation;
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
     _updateTime();
+    _startStepTimer();
+
+    // 애니메이션 초기화
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: -10, end: 10).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    // 애니메이션 초기화
+    _iconAnimationController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 5), // 애니메이션 지속 시간
+    );
+
+// 0에서 450까지 스캔 모션 구현
+    _iconAnimation = Tween<double>(begin: 0, end: 425).animate(
+      CurvedAnimation(
+        parent: _iconAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+// 애니메이션 반복: 0 -> 450 -> 다시 0 -> 450
+    _iconAnimationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _iconAnimationController.reset();
+        _iconAnimationController.forward();
+      }
+    });
+
+// 애니메이션 시작
+    _iconAnimationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    _stepTimer?.cancel();
+    _animationController.dispose();
+    _iconAnimationController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeCamera() async {
     cameras = await availableCameras();
     final frontCamera = cameras?.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.front,
+          (camera) => camera.lensDirection == CameraLensDirection.front,
       orElse: () => cameras!.first,
     );
 
     if (frontCamera != null) {
       _controller = CameraController(frontCamera, ResolutionPreset.high);
       _initializeControllerFuture = _controller?.initialize();
-      setState(() {}); // FutureBuilder를 새로고침하여 초기화 상태를 반영
+      setState(() {});
     }
   }
 
@@ -43,24 +96,18 @@ class _SamplePageImState extends State<SamplePageIm> {
     Timer.periodic(Duration(seconds: 1), (_) {
       final now = DateTime.now();
 
-      // 요일은 대문자로, 날짜는 "MMMM d" 형식으로 가져오기
       final dayOfWeek = DateFormat('EEEE').format(now).toUpperCase();
       final monthDay = DateFormat('MMMM d').format(now);
-
-      // 접미사 추가
       final daySuffix = _addDaySuffix(now.day);
 
-      // 상태 업데이트 (setState)로 UI 갱신
       setState(() {
-        formattedDate =
-            '$dayOfWeek, $monthDay$daySuffix'; // 예: SUNDAY, April 3rd
+        formattedDate = '$dayOfWeek, $monthDay$daySuffix';
         formattedTime = DateFormat('hh:mm').format(now);
         period = DateFormat('a').format(now);
       });
     });
   }
 
-// 접미사 처리 함수
   String _addDaySuffix(int day) {
     if (day >= 11 && day <= 13) return 'th';
     switch (day % 10) {
@@ -75,16 +122,11 @@ class _SamplePageImState extends State<SamplePageIm> {
     }
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  // 화면 터치 시 step을 업데이트하는 함수
-  void _nextStep() {
-    setState(() {
-      _currentStep = _currentStep % 6 + 1; // 1~6까지 반복
+  void _startStepTimer() {
+    _stepTimer = Timer.periodic(Duration(seconds: 5), (_) {
+      setState(() {
+        _currentStep = _currentStep % 7 + 1; // 1~7까지 반복
+      });
     });
   }
 
@@ -95,97 +137,75 @@ class _SamplePageImState extends State<SamplePageIm> {
         future: _initializeControllerFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            // 카메라 초기화 완료 시, 카메라 프리뷰 표시
-            return GestureDetector(
-              onTap: () {
-                _nextStep();
-              },
-              child: Stack(
-                children: [
-                  Stack(
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: CameraPreview(_controller!),
+                ),
+                _getCurrentStepWidget(),
+                // _buildStep3(),
+                Positioned(
+                  top: 62,
+                  left: 62,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        child: Positioned.fill(
-                          child: CameraPreview(_controller!),
+                      Text(
+                        formattedDate,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 21,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          _nextStep();
-                        },
+                      const SizedBox(height: 2),
+                      IntrinsicWidth(
                         child: Container(
-                          color: Colors.transparent, // 터치 영역을 전체 화면으로 확장
+                          height: 2,
+                          color: Colors.white,
+                          child: Text(
+                            formattedDate,
+                            style: TextStyle(
+                              color: Colors.transparent,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            formattedTime,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 43,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              Text(
+                                period,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  // GestureDetector를 Stack의 상단에 위치시켜 터치를 감지하게 함
-                  _getCurrentStepWidget(),
-                  // 상단 왼쪽 날짜 및 시간
-                  Positioned(
-                    top: 62,
-                    left: 62,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          formattedDate,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 21,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        IntrinsicWidth(
-                          child: Container(
-                            height: 2,
-                            color: Colors.white,
-                            child: Text(
-                              formattedDate,
-                              style: TextStyle(
-                                color: Colors.transparent, // 텍스트를 안 보이게 설정
-                                fontSize: 21,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              formattedTime,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 43,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  period,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 5),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             );
           } else {
-            // 로딩 중일 때 로딩 표시
             return Center(child: CircularProgressIndicator());
           }
         },
@@ -193,7 +213,8 @@ class _SamplePageImState extends State<SamplePageIm> {
     );
   }
 
-  // 현재 step에 따라 표시할 위젯을 반환하는 함수
+
+
   Widget _getCurrentStepWidget() {
     switch (_currentStep) {
       case 1:
@@ -208,6 +229,8 @@ class _SamplePageImState extends State<SamplePageIm> {
         return _buildStep5();
       case 6:
         return _buildStep6();
+      case 7:
+        return _buildStep7();
       default:
         return _buildStep1();
     }
@@ -299,10 +322,8 @@ class _SamplePageImState extends State<SamplePageIm> {
                     child: Center(
                       child: Image.asset(
                         "assets/test_icon/center_icon.png",
-
                       ),
                     ),
-
                   ),
                 ),
                 Positioned(
@@ -310,7 +331,6 @@ class _SamplePageImState extends State<SamplePageIm> {
                   left: 0,
                   child: Image.asset(
                     'assets/test_icon/top_left_corner.png',
-
                   ),
                 ),
                 Positioned(
@@ -318,7 +338,6 @@ class _SamplePageImState extends State<SamplePageIm> {
                   right: 0,
                   child: Image.asset(
                     'assets/test_icon/top_right_corner.png',
-
                   ),
                 ),
                 Positioned(
@@ -326,7 +345,6 @@ class _SamplePageImState extends State<SamplePageIm> {
                   left: 0,
                   child: Image.asset(
                     'assets/test_icon/bottom_left_corner.png',
-
                   ),
                 ),
                 Positioned(
@@ -334,7 +352,6 @@ class _SamplePageImState extends State<SamplePageIm> {
                   right: 0,
                   child: Image.asset(
                     'assets/test_icon/bottom_right_corner.png',
-
                   ),
                 ),
               ],
@@ -351,13 +368,112 @@ class _SamplePageImState extends State<SamplePageIm> {
         ],
       ),
     );
-
-
   }
 
-
-
   Widget _buildStep3() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 284,
+            height: 444,
+            child: Stack(
+              children: [
+                Center(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final containerWidth =
+                          constraints.maxWidth - 4; // 284 - 패딩 보정값
+                      return ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          width: 280,
+                          height: 438,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 35, bottom: 27),
+                                child: Image.asset(
+                                  "assets/test_icon/center_icon_1.png",
+                                  width: containerWidth, // center_icon_1 크기 고정
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              AnimatedBuilder(
+                                animation: _iconAnimationController,
+                                builder: (context, child) {
+                                  return Positioned(
+                                    top: _iconAnimation.value,
+                                    child: SizedBox(
+                                      width: containerWidth + 10,
+                                      // center_icon_1과 동일한 가로폭
+                                      child: Image.asset(
+                                        'assets/test_icon/center_icon_2.png',
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: Image.asset(
+                    'assets/test_icon/top_left_corner.png',
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Image.asset(
+                    'assets/test_icon/top_right_corner.png',
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  child: Image.asset(
+                    'assets/test_icon/bottom_left_corner.png',
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Image.asset(
+                    'assets/test_icon/bottom_right_corner.png',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 10),
+          Text(
+            "칫솔 인식 중..",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep4() {
     return Positioned(
       top: 56,
       right: 62,
@@ -442,7 +558,7 @@ class _SamplePageImState extends State<SamplePageIm> {
     );
   }
 
-  Widget _buildStep4() {
+  Widget _buildStep5() {
     return Positioned(
       top: 56,
       right: 62,
@@ -570,8 +686,28 @@ class _SamplePageImState extends State<SamplePageIm> {
               // 중앙 이미지
               SizedBox(height: 113.27),
               Center(
-                child: Image.asset(
-                  'assets/test_icon/mouth_brushing.png', // 실제 이미지 경로로 변경
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    Image.asset(
+                      'assets/test_icon/mouth_brushing_1.png', // 중앙에 위치
+                    ),
+                    AnimatedBuilder(
+                      animation: _animationController,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: -1,
+                          // 왼쪽으로 10 이동
+                          bottom: -15 + _animation.value,
+                          // 아래로 10 이동 후 애니메이션 적용
+                          child: Image.asset(
+                            'assets/test_icon/mouth_brushing_2.png',
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
 
@@ -629,7 +765,7 @@ class _SamplePageImState extends State<SamplePageIm> {
     );
   }
 
-  Widget _buildStep5() {
+  Widget _buildStep6() {
     return Positioned(
       top: 56,
       right: 62,
@@ -693,7 +829,7 @@ class _SamplePageImState extends State<SamplePageIm> {
                         ),
                       ),
                       Text(
-                        '87',
+                        '92',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 55,
@@ -865,7 +1001,7 @@ class _SamplePageImState extends State<SamplePageIm> {
     );
   }
 
-  Widget _buildStep6() {
+  Widget _buildStep7() {
     return Positioned(
       top: 56,
       right: 62,

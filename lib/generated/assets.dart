@@ -13,6 +13,8 @@ class Assets {
   static const String testIconBottomLeftCorner = 'assets/test_icon/bottom_left_corner.png';
   static const String testIconBottomRightCorner = 'assets/test_icon/bottom_right_corner.png';
   static const String testIconCenterIcon = 'assets/test_icon/center_icon.png';
+  static const String testIconCenterIcon1 = 'assets/test_icon/center_icon_1.png';
+  static const String testIconCenterIcon2 = 'assets/test_icon/center_icon_2.png';
   static const String testIconCloseIcon = 'assets/test_icon/close_icon.png';
   static const String testIconMainIcon1 = 'assets/test_icon/main_icon_1.png';
   static const String testIconMainIcon2 = 'assets/test_icon/main_icon_2.png';
@@ -22,6 +24,8 @@ class Assets {
   static const String testIconMainIcon6 = 'assets/test_icon/main_icon_6.png';
   static const String testIconMainIcon7 = 'assets/test_icon/main_icon_7.png';
   static const String testIconMouthBrushing = 'assets/test_icon/mouth_brushing.png';
+  static const String testIconMouthBrushing1 = 'assets/test_icon/mouth_brushing_1.png';
+  static const String testIconMouthBrushing2 = 'assets/test_icon/mouth_brushing_2.png';
   static const String testIconStep5Icon1 = 'assets/test_icon/step5_icon_1.png';
   static const String testIconStep5Icon2 = 'assets/test_icon/step5_icon_2.png';
   static const String testIconStep5Icon3 = 'assets/test_icon/step5_icon_3.png';
